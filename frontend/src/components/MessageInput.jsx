@@ -7,7 +7,7 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const { sendMessage, sendLMMPrompt, selectedUser } = useChatStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -29,14 +29,22 @@ const MessageInput = () => {
   };
 
   const handleSendMessage = async (e) => {
+    const lmmTrigger = "@ChatAI";
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
     try {
-      await sendMessage({
-        text: text.trim(),
-        image: imagePreview,
-      });
+      if (text.trim().startsWith(lmmTrigger)) {
+        const trimmedText = text.trim().slice(lmmTrigger.length);
+        await sendLMMPrompt({
+          text: trimmedText.trim(),
+        });
+      } else {
+        await sendMessage({
+          text: text.trim(),
+          image: imagePreview,
+        });
+      }
 
       // Clear form
       setText("");

@@ -6,6 +6,7 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime } from "../lib/utils";
+import ReactMarkdown from 'react-markdown';
 
 const ChatContainer = () => {
   const {
@@ -57,7 +58,7 @@ const ChatContainer = () => {
             <div className="chat-header mb-1">
             </div>
             <div className={`rounded-xl chat-bubble flex flex-col ${message.senderId === authUser._id ? "bg-primary text-primary-content" : "bg-base-200 text-base-content"}`}>
-              {message.text && <p>{message.text}</p>}
+              {message.text && <ReactMarkdown>{message.text}</ReactMarkdown>}
               <time className={`text-[10px] ${message.senderId === authUser._id ? "text-primary-content self-start" : "text-base-content/70 self-end"}`}>
                 {formatMessageTime(message.createdAt)}
               </time>
