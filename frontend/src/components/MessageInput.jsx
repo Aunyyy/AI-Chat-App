@@ -7,7 +7,7 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage, sendLMMPrompt, selectedUser } = useChatStore();
+  const { sendMessage, sendLLMPrompt, selectedUser } = useChatStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -29,14 +29,14 @@ const MessageInput = () => {
   };
 
   const handleSendMessage = async (e) => {
-    const lmmTrigger = "@ChatAI";
     e.preventDefault();
+    const llmTrigger = "@ChatAI";
     if (!text.trim() && !imagePreview) return;
 
     try {
-      if (text.trim().startsWith(lmmTrigger)) {
-        const trimmedText = text.trim().slice(lmmTrigger.length);
-        await sendLMMPrompt({
+      if (text.trim().startsWith(llmTrigger)) {
+        const trimmedText = text.trim().slice(LLMTrigger.length);
+        await sendLLMPrompt({
           text: trimmedText.trim(),
         });
       } else {

@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { sendLMMPrompt, getMessages, getUsersForSidebar, sendMessage } from "../controllers/message.controller.js";
+import { sendLLMPrompt, getMessages, getUsersForSidebar, sendMessage } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
@@ -9,6 +9,6 @@ router.get("/:id", protectRoute, getMessages);
 
 router.post("/send/:id", protectRoute, sendMessage);
 
-router.post("/:id/lmm", protectRoute, sendLMMPrompt);
+router.post("/:id/LLM", protectRoute, sendLLMPrompt);
 
 export default router;

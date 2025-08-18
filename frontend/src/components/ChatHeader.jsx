@@ -1,11 +1,27 @@
 import { X } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useJiraStore } from "../store/useJiraStore";
+import { useEffect } from "react";
 
 const ChatHeader = () => {
-  const { selectedUser, setSelectedUser } = useChatStore();
+  const { createTicket } = useJiraStore();
   const { onlineUsers } = useAuthStore();
+  const {
+    selectedUser,
+    setSelectedUser,
+  } = useChatStore();
   const avatarLogo = selectedUser.fullName.charAt(0)
+
+  const handleCreateJiraTicket = async (e) => {
+    e.preventDefault();
+    try {
+      await createTicket(selectedUser._id);
+    }
+    catch (error) {
+      console.error("Failed to create ticket:", error);
+    }
+  };
 
   return (
     <div className="p-2.5 border-b border-base-300 bg-base-300 text-base-content">
@@ -24,6 +40,13 @@ const ChatHeader = () => {
             </p>
           </div>
         </div>
+
+        {/* Create Issue Button */}
+        <button className="btn btn-primary font-medium ml-auto mr-1" 
+          onClick={handleCreateJiraTicket}
+        >
+          Create Issue
+        </button>
 
         {/* Close button */}
         <button onClick={() => setSelectedUser(null)}>

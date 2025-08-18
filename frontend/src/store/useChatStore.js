@@ -44,11 +44,11 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  sendLMMPrompt: async (messageData) => {
+  sendLLMPrompt: async (messageData) => {
     const { selectedUser, messages} = get();
     try {
-      const res = await axiosInstance.post(`/messages/${selectedUser._id}/lmm`, messageData);
-      console.log("LMM Response:frontend", res.data);
+      const res = await axiosInstance.post(`/messages/${selectedUser._id}/LLM`, messageData);
+      console.log("LLM Response:frontend", res.data);
       set({ messages: [...messages, ...res.data] });
     } catch (error) {
       toast.error(error.response.data.message);

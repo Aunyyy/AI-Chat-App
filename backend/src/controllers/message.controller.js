@@ -64,7 +64,7 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-export const sendLMMPrompt = async (req, res) => {
+export const sendLLMPrompt = async (req, res) => {
   try {
     const senderId = req.user._id;
     const { id: receiverId } = req.params;
@@ -80,7 +80,7 @@ export const sendLMMPrompt = async (req, res) => {
       model: "gpt-4o",
       input: text
     });
-    console.log("LMM Response:backend", response);
+    console.log("LLM Response:backend", response);
 
     const editedText = `@ChatAI ${text}`;
 
@@ -112,7 +112,7 @@ export const sendLMMPrompt = async (req, res) => {
 
     res.status(201).json([newPrompt, newMessage]);
   } catch (error) {
-    console.log("Error in sendLMMPrompt controller: ", error.message);
+    console.log("Error in sendLLMPrompt controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 }
