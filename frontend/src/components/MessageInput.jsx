@@ -35,7 +35,7 @@ const MessageInput = () => {
 
     try {
       if (text.trim().startsWith(llmTrigger)) {
-        const trimmedText = text.trim().slice(LLMTrigger.length);
+        const trimmedText = text.trim().slice(llmTrigger.length);
         await sendLLMPrompt({
           text: trimmedText.trim(),
         });

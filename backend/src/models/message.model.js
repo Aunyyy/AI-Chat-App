@@ -15,6 +15,10 @@ const messageSchema = new mongoose.Schema(
     text: {
       type: String,
     },
+    promptResponse: {
+      type: Boolean,
+      required: true,
+    },
     image: {
       type: String,
     },

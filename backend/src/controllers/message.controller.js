@@ -1,13 +1,17 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import OpenAI from "openai";
+import mongoose from "mongoose";
 
 import { getReceiverSocketId, io } from "../lib/socket.js";
+import { response } from "express";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const filteredUsers = await User.find({
+      _id: { $ne: loggedInUserId },
+    }).select("-password");
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -47,6 +51,7 @@ export const sendMessage = async (req, res) => {
       senderId,
       receiverId,
       text,
+      promptResponse: false,
       image: imageUrl,
     });
 
@@ -65,6 +70,8 @@ export const sendMessage = async (req, res) => {
 };
 
 export const sendLLMPrompt = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const senderId = req.user._id;
     const { id: receiverId } = req.params;
@@ -76,43 +83,70 @@ export const sendLLMPrompt = async (req, res) => {
 
     let imageUrl;
 
-    const response = await client.responses.create({
-      model: "gpt-4o",
-      input: text
-    });
-    console.log("LLM Response:backend", response);
-
     const editedText = `@ChatAI ${text}`;
 
     const newPrompt = new Message({
       senderId,
       receiverId,
       text: editedText,
+      promptResponse: false,
       image: imageUrl,
     });
-    
-    const newMessage = new Message({
+
+    const newResponse = new Message({
       senderId: receiverId,
       receiverId: senderId,
-      text: response.output_text,
+      text: "Loading...",
+      promptResponse: true,
       image: imageUrl,
     });
 
-    await newPrompt.save();
-    await newMessage.save();
+    await newPrompt.save({ session });
+    await newResponse.save({ session });
 
+    const streamedResponse = await client.responses.create({
+      model: "gpt-4o",
+      input: text,
+      stream: true,
+    });
+
+    res.status(201).json([newPrompt, newResponse]);
+
+    // console.log("LLM Response:backend", response);
+
+    //Reciever Socket ID
     const receiverSocketId = getReceiverSocketId(receiverId);
+    //Sender Socket ID
+    const currentSocketId = getReceiverSocketId(senderId);
+
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newPrompt);
+      io.to(receiverSocketId).emit("newMessage", newResponse);
     }
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
+    newResponse.text = "";
+    console.log("Streaming response...");
+    for await (const chunk of streamedResponse) {
+      if (chunk.type === "response.output_text.delta") {
+        const token = chunk.delta || "";
+        newResponse.text += token;
+        // Send partial token to the client
+        io.to(currentSocketId).emit("newResponse", newResponse.text);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("newStreamedMessage", newResponse.text);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100)); // 200ms delay
+      }
     }
 
-    res.status(201).json([newPrompt, newMessage]);
+    io.to(currentSocketId).emit("newResponseComplete");
+    await newResponse.save({ session });
+    await session.commitTransaction();
+    await session.endSession();
   } catch (error) {
     console.log("Error in sendLLMPrompt controller: ", error.message);
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};

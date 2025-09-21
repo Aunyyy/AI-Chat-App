@@ -49,22 +49,25 @@ const ChatContainer = () => {
       <ChatHeader />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
+        {messages.map((message, index) => {
+          const prevMessage = messages[index - 1];
+          const isSameSide = (message.senderId === authUser._id && !message.promptResponse) === (prevMessage && prevMessage.senderId === authUser._id && !prevMessage.promptResponse)
+          return (
           <div
             key={message._id}
-            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+            className={`chat ${(message.senderId === authUser._id && !message.promptResponse) ? "chat-end" : "chat-start"}
+            ${isSameSide ? "mb-0 py-[calc(0.15rem*1)]" : ""}`}
             ref={messageEndRef}
           >
-            <div className="chat-header mb-1">
-            </div>
-            <div className={`rounded-xl chat-bubble flex flex-col ${message.senderId === authUser._id ? "bg-primary text-primary-content" : "bg-base-200 text-base-content"}`}>
+            <div className={`rounded-xl chat-bubble flex flex-col ${(message.senderId === authUser._id && !message.promptResponse) ? "bg-primary text-primary-content" : "bg-base-200 text-base-content"}`}>
               {message.text && <ReactMarkdown>{message.text}</ReactMarkdown>}
-              <time className={`text-[10px] ${message.senderId === authUser._id ? "text-primary-content self-start" : "text-base-content/70 self-end"}`}>
+              <time className={`text-[10px] ${(message.senderId === authUser._id && !message.promptResponse) ? "text-primary-content self-start" : "text-base-content/70 self-end"}`}>
                 {formatMessageTime(message.createdAt)}
               </time>
             </div>
           </div>
-        ))}
+          );
+    })}
       </div>
 
       <MessageInput />

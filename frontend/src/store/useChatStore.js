@@ -37,7 +37,10 @@ export const useChatStore = create((set, get) => ({
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        messageData
+      );
       set({ messages: [...messages, res.data] });
     } catch (error) {
       toast.error(error.response.data.message);
@@ -45,11 +48,33 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendLLMPrompt: async (messageData) => {
-    const { selectedUser, messages} = get();
+    const { selectedUser, messages } = get();
     try {
-      const res = await axiosInstance.post(`/messages/${selectedUser._id}/LLM`, messageData);
-      console.log("LLM Response:frontend", res.data);
+      const socket = useAuthStore.getState().socket;
+      const res = await axiosInstance.post(
+        `/messages/${selectedUser._id}/LLM`,
+        messageData
+      );
+
       set({ messages: [...messages, ...res.data] });
+
+      console.log("LLM Response:frontend", res.data);
+
+      socket.on("newResponse", (newMessage) => {
+        set((state) => {
+          const updatedMessages = [...state.messages];
+          const lastIndex = updatedMessages.length - 1;
+
+          if (lastIndex >= 0) {
+            updatedMessages[lastIndex] = {
+              ...updatedMessages[lastIndex],
+              text: newMessage,
+            };
+          }
+
+          return { messages: updatedMessages };
+        });
+      });
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -63,10 +88,25 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", (newMessage) => {
       const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      if (!isMessageSentFromSelectedUser && !newMessage.promptResponse) return;
 
-      set({
-        messages: [...get().messages, newMessage],
+      set((state) => ({
+        messages: [...state.messages, newMessage],
+      }));
+    });
+
+    socket.on("newStreamedMessage", (streamedMessage) => {
+      set((state) => {
+        const updatedMessages = [...state.messages];
+        const lastIndex = updatedMessages.length - 1;
+
+        if (lastIndex >= 0) {
+          updatedMessages[lastIndex] = {
+            ...updatedMessages[lastIndex],
+            text: streamedMessage,
+          };
+        }
+        return { messages: updatedMessages };
       });
     });
   },
